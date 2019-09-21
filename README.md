@@ -39,7 +39,6 @@ When installing Ubuntu first, it is convenient to install the following models.
 # apt update
 # apt upgrade
 # apt install mailtools
-# 
 ```
 
 - Install the newest mosquitto as MQTT v5 broker
