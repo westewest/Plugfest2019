@@ -2,6 +2,10 @@ Plugfest
 Demonstration of IEEE P21451-1-6 for 2019 IEEE IES IECON PlugFest
 ====
 
+In this plugfest2019, the main concept of this demonstration is Use 1451-1-6 with MQTTv5 over Edge AI and IoT.
+
+===
+
 IEEE P21451-1-6 Working Group (WG) Development Meeting on STANDARD FOR A SMART TRANSDUCER INTERFACE FOR SENSORS, ACTUATORS AND DEVICES – MESSAGE QUEUE TELEMETRY TRANSPORT (MQTT)FOR NETWORKED DEVICE COMMUNICATION. 
 
 IEEE P21451-1-6 is included in IEEE 1451 Standards family. An event, IEEE 1451 Standards Plugfest, is achieved at INTEROP 1451, IECON '18. The objectives are as follows.
@@ -17,8 +21,10 @@ This demonstration program shows the typical example of IEEE P21451-1-6.
 ## Presentation Material
 
 This document focuses on installation.
-To know about this design model, please use the following link.  
+To know about this design model, please use the following URL.
 https://gitpitch.com/westewest/Plugfest2019
+
+The last Plugfest2018 demonstration environment is explained in the following URL.
 https://gitpitch.com/westlab/PlugFest/
 
 ## Requirements
@@ -26,22 +32,43 @@ https://gitpitch.com/westlab/PlugFest/
 - Required libraries and python packages must be installed. Follow the description of Install section.
 - You may use BLE-based Smart IoT Sensor Module manufactured by ALPS ELEC Co.Ltd. If you don’t have the module, you can use a pseudo sensor mode.
 - TIM and NCAP emulation are run on Intel-based conventional PC. Native Linux environment is recommended.
-- For the minimum environment, one conventional PCs is enough if it has enough performance. As a recommendation, three conventional PC should be prepared; one for TIM/NCAP emulation to connect IoT sensors, one for MQTT v5 broker, and one for service client as a node-red host are required.  All these services can be executed on one server.
+- For the minimum environment, one conventional PCs is enough if it has enough performance. As a recommendation, four conventional PC should be prepared; one for TIM/NCAP emulation to connect IoT sensors (hostname:iot), one for Face Detection using Deep Learning (hostname:ai), one for MQTT v5 broker (hostname:srv), and one for service client as a node-red host are required.  All these services can be executed on one server.
 - MQTT v5 broker is required to use new features of MQTT v5. For IEEE P21451-1-6, MQTT v5 will be mandatory to implement all needed functions for IEEE1451.
+- (IMPORTANT) There are two versions of GitHub design: westlab/Plugfest2019 and  westewest/Plugfest2019. At this moment westewest is the correct model. Please replace all the source URL of git command line.
 
 ## Installation
-
-### MQTT broker installation
 
 - Preparation
 When installing Ubuntu first, it is convenient to install the following models.
 ```
-# apt update
-# apt upgrade
-# apt install mailtools
+	# apt update
+	# apt upgrade
+	# apt install mailtools
+	# apt install build-essential
+	# apt install openssh-server
 ```
 
+It is better to register all machines to /etc/hosts
+
+```
+	# vi /etc/hosts
+```
+
+add the following lines to the end of /etc/hosts file.
+
+```
+192.168.0.10    srv
+192.168.0.20    ai
+192.168.0.21    iot
+```
+
+### MQTT broker installation (srv)
+
+#### Install Mosquitto MQTTv5 broker
+
 - Install the newest mosquitto as MQTT v5 broker
+
+Mosquitto is one of the most popular MQTT brokers, and it supports MQTTv5 now. 
 
 Eclipse Mosquitto is an open-source (EPL/EDL licensed) message broker that implements the MQTT protocol versions 5.0, 3.1.1 and 3.1. Mosquitto is lightweight and is suitable for use on all devices from low power single board computers to full servers.
 
@@ -49,14 +76,175 @@ https://mosquitto.org/
 
 Download the newest mosquitto and install to the Linux machine.
 ```
-# apt install git
-# apt-add-repository ppa:mosquitto-dev/mosquitto-ppa
-# apt upgrade
-# systemctl start mosquitto
-# systemctl enable mosquitto
+	# apt install git
+	# apt-add-repository ppa:mosquitto-dev/mosquitto-ppa
+	# apt upgrade
+	# systemctl start mosquitto
+	# systemctl enable mosquitto
 ```
 The command line starts with # means it requires sudo environment to get root account.
 The mosquitto server will be started and will be executed automatically when your system boots.
+
+You may install mosquitto by using the following packages; however, the following installation installs Mosquitto v1.4 which does not support MQTTv5.
+
+```
+	# apt install mosquitto [Not Supported]
+```
+
+To confirm the installation and execution, do the following commands in different terminals.
+Open two terminals.
+
+1st terminal:
+```
+    # mosquitto_sub -d -t test
+```
+
+2nd terminal:
+```
+    # mosquitto_pub -d -t test -m hogehoge
+```
+
+You can see messages in the 1st terminal. Here, -d is the debug option. You can omit it. -t specifies topic, and -m specifies messages. To connect another MQTT broker host, use –h option.
+
+#### Install Mosquitto MQTTv5 broker into Windows (Option)
+
+You may also install MQTT server into Windows 10 machine.
+
+Download the newest Mosquitto from the eclipse site.
+https://mosquitto.org/download/
+
+At this moment, mosquitto-1.6.6-install-windows-x64.exe is the newest design. 34bit build model is also available. It is compiled by using Visual Studio Community 2017)
+
+You may also install the following libraries.
+
+From [ http://slproweb.com/products/Win32OpenSSL.html ], download [ install Win32OpenSSL_Light-1_0_2k.exe ] and execute it.
+Copy libeay32.dll and ssleay32.dll in C:¥OpenSSL-Win32¥bin of OpenSSL to C:\Program Files (x86)\mosquitto
+Get pthreadVC2.dll from ftp://sources.redhat.com/pub/pthreads-win32/dll-latest/dll/x86/
+
+And, copy it to C:\Program Files (x86)\mosquitto
+
+If you want to execute Mosquitto Broker, it only can be executed as a Windows service.
+Use the Services menu of Windows Management tool and enable it.
+
+#### Install Docker-based MQTT broker
+
+Docker is a light-weight virtual machine environment. This installation method can encapsulate mosquitto environment into virtual machine. If you are not familiar with using Docker, the normal installation given above is preferable.
+
+- MQTT broker server on Docker
+
+-- Installation of Docker
+
+Install docker by following commands. This is just what you do. However, it takes time.
+
+```
+    # apt install curl
+    # curl -sSL https://get.docker.com | sh
+```
+
+Otherwise, you can install docker from packages.
+
+```
+	# sudo apt install -y apt-transport-https ca-certificates \
+		curl software-properties-common
+```
+
+Install GPG key of Docker.
+
+```
+	# curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+```
+
+Set apt repository to stable.
+
+```
+	# sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+		$(lsb_release -cs)    stable"
+```
+
+Install Docker-ce.
+
+```
+	# apt upgrade
+	# apt install -y docker-ce
+```
+
+You may have some troubles when resolving DNS of get.docker.com or getting PGP keys. In this case, IP address and the canonical name of get.docker.com by using nslookup command, and directly write the address and name to /etc/hosts. You also add download.docker.com to the hosts file.
+
+-- Docker installation test
+
+As a test, execute hypriot image. This hypriot is a very nice site, which preparing many kinds of Docker images.
+
+```
+    # docker run -d -p 80:80 hypriot/rpi-busybox-httpd
+```
+
+This command executes httpd web server in a docker. Check a test site is open in your raspberry-pi by accessing a web browser in your network.
+
+```
+    # docker ps
+    # docker stop [NAME] (This name will be changed at any time)
+```
+
+- Install Mosquitto on Docker
+
+Then install docker image of mosquitto MQTT server
+
+```
+    # docker run -tip 1883:1883 -p 9001:9001 pascaldevink/rpi-mosquitto
+```
+
+If you execute mosquitto docker image by changing its configurations, do following commands.
+
+```
+    mkdir -p /srv/mqtt/config/
+    mkdir -p /srv/mqtt/data/
+    mkdir -p /srv/mqtt/log/
+```
+
+place your mosquitto.conf in /srv/mqtt/config/
+
+NOTE: You have to change the permissions of the directories to allow the user to read/write to data and log and read from config directory For TESTING purposes you can use the following command
+
+```
+    # chmod -R 777 /srv/mqtt/*
+    # docker run -ti -p 1883:1883 -p 9001:9001 \
+		-v /srv/mqtt/config:/mqtt/config:ro \
+		-v /srv/mqtt/log:/mqtt/log \
+		-v /srv/mqtt/data/:/mqtt/data/ \
+		--name mqtt pascaldevink/rpi-mosquitto
+```
+
+#### Windows 10 mosquitto clients (Option)
+
+Check your config file
+
+```
+    C:\Program Files (x86)\mosquitto\mosquitto.conf
+    >cd "C:\Program Files (x86)\mosquitto"
+    >mosquito_sub –t test
+```
+
+In another window
+
+```
+    >cd "C:\Program Files (x86)\mosquitto"
+    >mosquito_pub –t test –m hoge
+```
+
+It shows “hoge”.
+
+You may change your Firewall configuration. Check system and security menu in control panel.
+And change the mosuquitto.exe, mosquitt_pub.exe,mosquitto_sub.exe as public functions.
+
+One important point. Windows mosquitto cannot send and receive UTF coded messages. This is a serious problem.
+
+#### Paho mqtt client (Option)
+
+Paho MQTT client is a popular MQTT client library for Python. However, it does not MQTTv5 at this moment. Please install gmqtt. This paho-mqtt, as well as gmqtt, is available for Python v3. Install the paho library.
+
+```
+    # pip3 install paho-mqtt
+```
 
 ### NCAP/TIM emulator installation
 
@@ -101,48 +289,75 @@ Here, it will be better to reboot.
 
 You can install pip for python2 if you want.
 
+
+
 #### ALPS ELEC Smart IoT BLE Sensor Module
 
-If you don’t have the module, you can skip this installation. In this case, you will use a dummy sensor, which generates random values. You can skip this installation if you use dummy sensor.
+If you don’t have the module, you can skip this installation. In this case, you will use a dummy sensor, which generates random values. You can skip this installation if you use a dummy sensor. You can also use any sensors replacing the description abut ALPS sensor.
 
 Blog of TomoSoft (as given below) explains how to install the ALPS module. This is a very simple way for us to connect sensors to Raspberry Pi via Bluetooth.
 http://tomosoft.jp/design/?p=8104
 http://www.hiramine.com/physicalcomputing/raspberrypi3/wlan_howto.html
 These pages are written in Japanese. Use google translator. Simply, it is enough to follow the process below.
 
-(Note) The code in the site has a bug in handling sign of values. Acceleration sensor value and geomagnetic sensor value are signed values. The original code handles these values as unsigned values. Our design does not hve this bug.
-
-Firstly, it is better to check the update.
-
-```
-    # sudu su (This is not a good way? Yes, but is easy.)
-    # apt-get update (Anytime you do something, you should do update.)
-```
+(Note) The code in the site has a bug in handling sign of values. Acceleration sensor value and geomagnetic sensor value are signed values. The original code handles these values as unsigned values. Our design does not have this bug.
 
 - Set time
 
-Fix the clock of your raspberry pi.
+Fix the clock of your machine. ALPS IoT module requires correct time because it refers the clock of mother machine.
 
 ```
-    # apt-get install ntpdate # (we need time for getting sensor data. We want to store sensor data with time.)
-    # timedatectl set-timezone Asia/Tokyo # (select your timezone)
-    # ntpdate ntp.nict.jp # (select your closest ntp server)
-    # systemctl enable ssh
+# systemctl stop ntp		#(If ntp is already installed, stop it)
+# apt install ntpdate
+# timedatectl set-timezone Asia/Tokyo 	#(select your timezone)
+# ntpdate ntp.nict.jp		#(select your closest ntp server)
+# apt install ntp
 ```
 
-- Install required modules.
+Edit ntp configuration file to add ntp server.
 
-Firstly, install blupy, which is a python interface to communicate via bluetooth
 
 ```
-    # apt-get install python-pip libglib2.0-dev
+	# vi /etc/npt.conf
+```
+
+Optionally, to get the precise clock in Japan, edit the config file as follows. You have to edit according to your time zone and time server. As a default, Ubuntu Pool time server project is described and is useful in many cases.
+
+```
+#server 0.ubuntu.pool.ntp.org
+#server 1.ubuntu.pool.ntp.org
+#server 2.ubuntu.pool.ntp.org
+#server 3.ubuntu.pool.ntp.org
+server ntp.nict.jp
+```
+
+Execute ntp
+
+```
+	# systemctl start ntp
+```
+
+To confirm the status of time synchronization of ntp service, use the following command.
+
+```
+	# ntpq -p
+```
+
+- Install the required modules.
+
+The alps modules required Bluetooth helper module and some part of bluepy sources.
+
+Firstly, install blupy, which is a python interface to communicate via Bluetooth
+
+```
+    # apt-get install python3-pip libglib2.0-dev
     # apt-get install git build-essential
     # cd
-    # pip install bluepy
+    # pip3 install bluepy
     # pip3 install pybluez
 ```
 
-+ we need some part of bluepy sourses. Extract sources from git.
++ we need some part of bluepy sources. Extract sources from git.
 + It is better to set a working directory. Here, we set /export as a working directory.
 
 In the working directory, install bluepy.
@@ -153,14 +368,14 @@ In the working directory, install bluepy.
     # git clone https://github.com/IanHarvey/bluepy.git
     # cd bluepy
 ```
-
+Now you are in the directory of /export/install/bluepy
 Update the blupy. It is preferable.
 
 ```
-    # python setup.py build
-    # python setup.py install
+    # python3 setup.py build
+    # python3 setup.py install
     # cd bluepy
-    # ls btle.py (check the existence of the file)
+    # ls btle.py 		#(check the existence of the file)
     # cd /export/install
 ```
 
@@ -169,10 +384,10 @@ Update the blupy. It is preferable.
 Our all design is available in GitHub.
 
 ```
-    # git clone https://github.com/westlab/PlugFest
+    # git clone https://github.com/westlab/Plugfest2019
     # cd /export/install/bluepy/bluepy
-    # cp ../../PlugFest/PlugFestRP/alps/alps_sensor.py .
-    # python alps_sensor.py
+    # cp ../../Plugfest2019/P21451-1-6/alps/alps_sensor.py .
+    # python3 alps_sensor.py
 ```
 
 Check it does not report any errors, and it will be quiet.
@@ -187,10 +402,10 @@ Check btle.py btle.pyc and bluepy-helper. These files are important to communica
 
 ```
     # cd /export
-    # ln -s install/PlugFest/PlugFestRP/alps .
+    # ln -s install/Plugfest2019/P21451-1-6/alps .
     # cp install/bluepy/bluepy/{btle.py,bluepy-helper} alps
     # cd alps
-    # python alps_sensor.py
+    # python3 alps_sensor.py
 ```
 
 Again, Check it does not report any errors, and just quiet. If it is Ok, then type Ctrl-C.
@@ -210,274 +425,30 @@ The address is printed on the surface of the sensor module. You can also check t
 Run the python script. You can add -h option to check the options of the script.
 
 ```
-    # python alps_sensor.py
+    # python3 alps_sensor.py
 ```
 
 Then, you can get the sensor values. It takes about 10 seconds to get sensor data from when you run the script.
 
-The program uses Hyblid Mode of sensor module and set all sensors ON.
+The program uses Hybrid Mode of sensor module and set all sensors ON.
 The sampling rate of the acceleration sensor and the geomagnetic sensor is 100 mil seconds.
 Others are 1 second.
 
-#### MQTT clients and server installation.
+#### Other Bluetooth sensors (Option and is not confirmed)
 
-Both Docker container installation and packet installaion are available.
-Ok, then, let’s do both. (Wao!)
+ALPS IoT module uses Bluetooth Low Power (BLE), and the operation code uses special method of bluepy. Generally, pybluez and gattlib are used to connect Bluetooth sensors.
+There are many kinds of Bluetooth-based sensors such as TI SensorTag CC2650.
 
-- MQTT broker server on Docker
-
-Install docker by following commands.
+If you want to use it, you have to install BlueZ and GATT (Generic Attribute Profile). The following installation process is an example and was not checked in an Ubuntu environment.
 
 ```
-    # apt-get update
-    # curl -sSL https://get.docker.com | sh
+	# apt install python-dev libbluetooth3-dev
+	# pip3 install pybluez
+	# apt install libglib2.0 libboost-python-dev libboost-thread-dev
+	# pip3 install gattlib
 ```
 
-This is only what you do. However, it takes time.
-
-To execute docker container by pi adding to root.
-
-You may have some troubles when resolving DNS of get.docker.com or getting PGP keys. In this case, IP address and the canonical name of get.docker.com by using nslookup command, and directly write the address and name to /etc/hosts. You also add download.docker.com to the hosts file.
-
-If you edited /etc/hosts, bring it back.
-
-```
-    # usermod -aG docker pi
-```
-
-As a test, execute hypriot image. This hypriot is a very nice site, which preparing manyu kinesof Docker images.
-
-```
-    # docker run -d -p 80:80 hypriot/rpi-busybox-httpd
-```
-
-This command executes httpd web server in a docker. Check a test site is open in your raspberry-pi by accessing a web browser in your network.
-
-```
-    # docker ps
-    # docker stop [NAME] (This name will be changed at any time)
-```
-
-Then install docker image of mosquitto MQTT server
-
-```
-    # docker run -tip 1883:1883 -p 9001:9001 pascaldevink/rpi-mosquitto
-```
-
-If you execute mosquitto docker image by changing its configurations, do following commands.
-
-```
-    mkdir -p /srv/mqtt/config/
-    mkdir -p /srv/mqtt/data/
-    mkdir -p /srv/mqtt/log/
-```
-
-place your mosquitto.conf in /srv/mqtt/config/
-
-NOTE: You have to change the permissions of the directories to allow the user to read/write to data and log and read from config directory For TESTING purposes you can use the following command
-
-```
-    # chmod -R 777 /srv/mqtt/*
-    # docker run -ti -p 1883:1883 -p 9001:9001 \
-    -v /srv/mqtt/config:/mqtt/config:ro \
-    -v /srv/mqtt/log:/mqtt/log \
-    -v /srv/mqtt/data/:/mqtt/data/ \
-    --name mqtt pascaldevink/rpi-mosquitto
-```
-
-- Mosquitto MQTT broker installation
-
-Install mosquitto MQTT broker server. It is very popular.
-
-```
-    # apt install mosquitto
-    # apt install mosquitto-clients (MQTT clients)
-```
-
-To confirm the installation and execution, do following commands.
-
-```
-    # mosquitto_sub -d -t orz
-    # mosquitto_pub -d -t orz -m hogehoge
-```
-
-To connect another host, use –h option.
-
-You may also install MQTT server into Windows 10 machine.
-
-http://www.eclipse.org/downloads/download.php?file=/mosquitto/binary/win32/mosquitto-1.4.14-install-win32.exe
-
-You may also install the following libraries.
-
-From [ http://slproweb.com/products/Win32OpenSSL.html ], download [ install Win32OpenSSL_Light-1_0_2k.exe ] and execute it.
-Copy libeay32.dll and ssleay32.dll in C:¥OpenSSL-Win32¥bin of OpenSSL to C:\Program Files (x86)\mosquitto
-Get pthreadVC2.dll from ftp://sources.redhat.com/pub/pthreads-win32/dll-latest/dll/x86/
-
-And, copy it to C:\Program Files (x86)\mosquitto
-
-If you want to execute Mosquitto Broker, it only can be executed as a Windows service.
-Use Services menu of Windows Management tool and enable it.
-
-- Windows 10 mosquitto clients
-
-Check your config file
-
-```
-    C:\Program Files (x86)\mosquitto\mosquitto.conf
-    >cd "C:\Program Files (x86)\mosquitto"
-    >mosquito_sub –t test
-```
-
-In another window
-
-```
-    >cd "C:\Program Files (x86)\mosquitto"
-    >mosquito_pub –t test –m hoge
-```
-
-It shows “hoge”.
-
-You may change your Firewall configuration. Check system and security menu in control panel.
-And change the mosuquitto.exe, mosquitt_pub.exe,mosquitto_sub.exe as public functions.
-
-One important point. Windows mosquitto cannot send and recive UTF coded messages. This is a serious problem.
-
-- Paho mqtt client
-
-To use MQTT server from python, install paho-mqtt.
-This is only available for Python v3.
-So you may change python link to python 3. In my environment, it is not required.
-
-```
-    # cd /usr/bin
-    # rm python
-    # ln -s python3.5 python
-```
-
-Do not forget restoring this change.
-Install the paho library.
-
-```
-    # pip install paho-mqtt
-    # pip3 install paho-mqtt
-```
-
-pub-, sub- client examples of paho-mqtt are as follows.
-You can check it in /export/install/PlugFest/PlugFestRP/mqtt-client-py
-
-```
-    # cd /export
-    # ln -s install/PlugFest/PlugFestRP/mqtt-client-py
-```
-
-Check the operation of paho-mqtt.
-
-#### Installing Bluetooth to Raspberry-Pi
-
-The bluetooth instration for ALPS MODULE is for Bluetooth Low Energy. This is simple protocol and pairing is not needed. To communicate between sensor node and processing/combining node, it needs general Bluetooth connection modules.
-
-- Two raspberry-pi for sensor node (TIM) and processing node (NCAP) are required to check the connectivity.
-- This model supports multiple clients. Here, we use three raspberry-pi as sensor nodes to check the operation.
-
-- Preparation
-
-Firstly, you should do this.
-
-```
-    # apt-get update
-    # apt-get upgrade
-    # apt-get dist-upgrade
-```
-
-Execute the following command to get our design model. If you follow this install manual, you may have already got our model.
-
-```
-    # mkdir –p /export/install
-    # cd /export/install
-    # git clonse https://github.com/westlab/PlugFest
-    # cd /export
-    # ln -s install/PlugFest/PlugFestRP/bluetooth-com .
-    # ln -s install/PlugFest/PlugFestRP/TEDS .
-```
-
-- Install Bluetooth driver 
-
-get bluetooth repository.
-
-```
-    # apt-get install bluetooth
-```
-
-- Install concerning packages
-
-get the following repositories.
-
-```
-    # apt-get install libusb-dev libdbus-1-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev libdbus-glib-1-dev
-```
-
-- Install python library (bluez)
-
-Install bluez library.
-
-```
-    # apt-get install python-dev
-    # apt-get install libboost-python-dev libglib2.0 libboost-thread-dev
-    # apt-get install libbluetooth3-dev
-    # cd /export/install
-    # wget http://www.kernel.org/pub/linux/bluetooth/bluez-5.50.tar.xz
-    # xz -dv bluez-5.50.tar.xz
-    # tar -xf bluez-5.50.tar
-    # cd bluez-5.50/
-    # ./configure --enable-experimental
-    # make –j 3 (you can use 4 cores for compile. It will be very heavy. This compile process will take comparatively longer time than others.)
-    # make install
-    # pip install pybluez
-```
-
-- Install GUI interfaces for bluetooth
-
-Update Bluetooth control icon on the menu.
-
-```
-    # apt-get install pi-bluetooth blueman
-```
-
-Default GUI Bluetooth on the menu bar will be overwrited.
-
-If you want, you can install the following modles to connect Bluetooth speaker.
-
-```
-    # apt-get install pulseaudio pavucontrol pulseaudio-module-bluetooth 
-    # apt-get install bluez-hcidump
-```
-
-Now, reboot your system. Need reboot to use new GUI.
-
-```
-    # reboot
-```
-
-Remove old Bluetooth GUI interface on the menu.
-
-Click the right button of the mouse on the old Bluetooth icon on the menu -> Select Remove “Bluetooth” From Panel
-
-- Additional installation to use bluetooth
-Edit /lib/systemd/system/bluetooth.service
-
-```
-    #ExecStart=/usr/lib/bluetooth/bluetoothd     ( or /usr/local/libexec/bluetooth/bluetoothd )
-    ExecStart=/usr/local/libexec/bluetooth/bluetoothd -C
-    ExecStartPost=/usr/bin/sdptool add SP
-```
-
-Then execute pip to install gittlib.
-
-```
-    # pip install gattlib (this will take a while)
-```
-
-If you failed in installing gattlib, you have to install it from source.
+If you failed in installing gattlib, you have to install it from the source repository.
 
 ```
     # cd /export/install
@@ -488,6 +459,18 @@ If you failed in installing gattlib, you have to install it from source.
     # pip3 install . (Do not miss the last period)
 ```
 
+As sample codes, scan.py can search SensorTag.
+
+```
+	# python3 pybluez/examples/ble/scan.py
+```
+
+To get sensor data, refer the following sample code.
+
+```
+    # python3 pybluez/examples/ble/read_name.py
+```
+
 - Reload daemon process
 Now reload the daemon processes.
 
@@ -496,210 +479,34 @@ Now reload the daemon processes.
     # systemctl restart bluetooth
 ```
 
-####
+## Applications
 
-Now, new design model use Python3. Paho MQTT client on Python requires Python3 for subscribing.
-Here is the additinal installations for Python3.
-
-```
-    # pip3 install pybluez
-    # pip3 install paho-mqtt
-    # pip3 install pyopengl Pillow
-    # pip3 install gattlib
-```
-
-If you failed in installing gattlib, you may install it from sources.
-
-```
-    # cd /export/install
-    # pip3 download gattlib
-    # tar xvzf ./gattlib-0.20150805.tar.gz
-    # cd gattlib-0.20150805/
-    # sed -ie 's/boost_python-py34/boost_python-py35/' setup.py
-    # pip3 install .
-    # systemctl daemon-reload
-    # systemctl restart bluetooth
-```
-
-## Usage
-
-### Pairing
-
-This paring task is sometimes tough because you do not see terget Bluetooth device in your window or list. You may try again and again to type commands to make pair.
-
-As a preparation, give appropriate Bluetooth name to client and server machine.
-[GUI]
-Select Adapter -> select discoverable anytime
-Select Adapter -> give name
-
-Firstly, check the physical address of Bluetooth device on Raspberry Pi.
-Now you have to select NCAP (server) and TIM (client).
-Check the server’s physical address.
-Type the following commands in the server.
-
-```
-    # hciconfig
-    hci0:   Type: BR/EDR  Bus: USB
-        BD Address: B8:27:EB:9A:A4:C7 ACL MTU: 1021:8  SCO MTU: 64:1
-        UP RUNNING PSCAN 
-        RX bytes:1724 acl:0 sco:0 events:92 errors:0
-        TX bytes:1364 acl:0 sco:0 commands:87 errors:0
-```
-
-This “BD Address: B8:27:EB:9A:A4:C” is the physical address of the bluetooth module.
-
-We have two method to pair Bluetooth devices. One is GUI-based operation the other is command-line-based operation. 
-
-+ Give a permission to be searched from others server
-
-[CMD]
-
-```
-    # bluetoothctl
-    Agent registered
-    [bluetooth] # power on               <= command
-    Changing power on succeeded
-    [bluetooth] # discoverable on         <= command
-    Changing discoverable on succeesed
-    [CHG] Controller B8:27:EB:9A:A4:C7 Discoverable : yes
-```
-
-You can leave from bluetoothctl by using quit command.
-
-- Pairing from client
-Pair with client. You will check the blutooth physical address of server.
-
-```
-    #bluetoothctl
-    Agent registered
-    [bluetooth] # pair B8:27:EB:9A:A4:C7
-    Attempting to pair with B8:27:EB:9A:A4:C7   <= success
-    Device B8:27:EB:9A:A4:C7 not available      <= fail. Try again and again
-```
-
-[GUI]
-Click Bluetooth icon on the menu bar.
-Select Make Discoverable
-Click Devices
-Find server physical address
-Click the address and select pair
-
-It is better to check the Bluetooth connection by transferring file via Bluetooth menu interface.
-
-If pairing made a success, you may see a cross mark on the address list.
-
-### Execution
-
-#### Windows MQTTnet Server
-
-Open PlugFestUWP/PlugFest.sln in GitHub directory.
-Press "Start MQTT Server".
-
-#### Raspberry Pi
-
-Now you can execute a program.
-
-```
-    # cd /export/install/bluetooth-com
-    # cp /export/install/bluepy/bluepy/{btle.pyc,bluepy-helper} .
-```
-
-[server]
-
-```
-    # python rfcommserver.py –h
-```
-
-Now just run it. (No MQTT server connection)
-
-```
-    # python rfcommserver.py -v
-```
-
-[client]
-
-```
-    # python alps.py –h
-```
-
-You may special ALPS IOT Module address by –m option, or you may use pseudo_sensor option to use random values. As an example:
-
-```
-    # python alps.py -P -d B8:27:EB:DB:97:2F -v
-```
-
-### Paring trouble shooting
-
-- To check all physical addresses in command line
-
-```
-    #hciconfig –a
-        50 BD Address: B8:27:EB:35:5A:5E
-        51 BD Address: B8:27:EB:DB:D2:8E
-        52 BD Address: B8:27:EB:72:B3:11
-        53 BD Address: B8:27:EB:E3:BC:BE
-        54 BD Address: B8:27:EB:9A:A4:C7
-        55 BD Address: B8:27:EB:3E:00:C5
-```
-
-- Check rfcomm operation
-You have to set up two machines; server and client.
-Client
-Make /dev/rfcomm0
-
-```
-    # rfcomm bind 0 B8:27:EB:9A:A4:C7
-```
-
-Server
-
-```
-    # rfcomm watch 0 1 agetty rfcomm0 115200 linux -a pi
-```
-
-Then, execute the following command at client. You will login to the server machine via Bluetooth.
-
-```
-    # screen /dev/rfcomm0 115200
-```
-
-This means your rfcomm is open and works correctly.
-If it does not work, you may reset devices and confirm it.
-
-```
-    # rfcom release [n] /dev/rfcomm[n]
-    # systemctl restart Bluetooth
-```
-
-By using GUI you can confirm the status of Bluetooth device.
-
-```
-    # hciconfig hci0 up
-    # sdptool add SP
-    # sdptool browse local | grep -i serial
-
-    # sdptool add –channel=[n]
-    # rfcomm bind [n] B8:27:EB:9A:A4:C7     This [n] should be changed independently.
-
-    # ls -la /dev/rfcomm*
-        crw-rw---- 1 root dialout 216, 1  Sep  23 21:10 /dev/rfcomm1
-    # ls -la /var/lib/bluetooth
-        drwx------  4 root root 4096  Sep  23 20:50 B8:27:EB:72:B3:11 (address of yourself)
-```
-
-### Application
-
-#### Node-RED
+### Node-RED
 
 Elasticsearch+kibana works but is very heavy.
 
-Dashing is Ok but is just a “dashboard”
+Dashing application is Ok but is just a “dashboard.”
 
 Here, install Node-red as IoT application.
 
 ```
-    # apt-get install –y nodered
+    # apt install –y nodejs
+	# apt install npm
     # systemctl start nodered
+	# npm install -g --unsafe-perm node-red node-red-admin
+```
+
+Open firewall for permitting the remote access to the node-red server.
+
+```
+	# ufw allow 1880
+	# ufs reload
+```
+
+Execute node-red
+
+```
+	# node-red
 ```
 
 Access to the following site.
@@ -708,29 +515,65 @@ localhost is your installed machine name or IP address.
 
 It has many functions to connect IoT services.
 One important function for demonstration is drawing graphs.
-Install nodered-dashboard
+In the installation above, dashboard will be automatically installed.
+If it is not installed, see the last Plugfest2018 installation document to install it.
 
-```
-    # systemctl stop nodered
-    # apt-get install npm
-    # update-nodejs-and-nodered
-    # npm i node-red-dashboard
-    # systemctl start nodered
-```
-
-To use dashboard, select menu button (right top) and select “setting”, “pallet”, and search node-red-dashboard. Then press install button on the node-red-dashboard tab. You may find many plugin applications for Node-RED.
+To use the dashboard, select the menu button (right-top) and select “setting,” “pallet,” and search node-red-dashboard. Then press install button on the node-red-dashboard tab. You may find many plugin applications for Node-RED.
 
 You can access the dashboard panel by the following URL.
 http://localhost:1880/ui
 
+### To make node-red as a service
+
+If you want to use node-red, you have to execute node-red firstly anytime by typing node-red to the command console.
+
+If you want to execute node-red automatically when the system boots, pm2 service will help it.
+
+Register the node-red service to pm2.
+
+```
+	# npm install -g pm2
+	# pm2 start /usr/local/bin/node-red -- -v
+	# pm2 save
+```
+
+register pm2 to systemd service. The following command executes systemctl enable pm2-root.
+
+```
+	# pm2 startup
+```
+
+If you want to see the logfile of node-red, do like this.
+
+```
+	# pm2 logs node-red
+```
+
+If you want to restart node-red, do like this.
+
+```
+	# pm2 restart node-red
+```
+
+If you want to install node, you can use pallet manager. If you want to add nodes from a command line, do like this.
+
+```
+	# cd ~/.node-red
+	# npm install {path to the target node project}
+	# pm2 restart node-red
+```
+
+
+### Authentication of Node-red (Option)
+
 It does not have authorization as it’s original configuration.
-It is better to install authorization function for Node-RED.
+It is better to install an authentication function for Node-RED.
 
 ```
     # npm i bcrypt
 ```
 
-You have to implement encoded password into the configuration file.
+You have to implement an encoded password into the configuration file.
 Use the following command to get the encoded password.
 
 ```
@@ -756,14 +599,16 @@ adminAuth: {
 }
 ```
 
-#### Wind speed and direction sensor
+### Wind speed and direction sensor
 
 This model is applicable to use SGLab wind speed and direction sensor.
 NodeMCU was used to read data from the sensor. Use Arduino IDE to design NodeMCU. To install NodeMCU, you may install required libraries to design NodeMCU on Arduino IDE.
 
 To depict the graphical image of the measured data,  use the python script in GL directory.
 
-#### Prevent Darkout
+## Other topics
+
+### Prevent Darkout
 
 If you want to use the dashboard like KIOSK, which means to prevent the screen darkout, use the following command.
 
@@ -789,4 +634,4 @@ Then, insert the following lines to the end of the file.
 @xset dpms 0 0 0
 ```
 
-The screen will not go sleep.
+The screen will not go to sleep.
