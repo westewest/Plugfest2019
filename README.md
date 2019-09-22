@@ -132,7 +132,7 @@ Docker is a light-weight virtual machine environment. This installation method c
 
 - MQTT broker server on Docker
 
--- Installation of Docker
++ Installation of Docker
 
 Install docker by following commands. This is just what you do. However, it takes time.
 
@@ -170,7 +170,7 @@ Install Docker-ce.
 
 You may have some troubles when resolving DNS of get.docker.com or getting PGP keys. In this case, IP address and the canonical name of get.docker.com by using nslookup command, and directly write the address and name to /etc/hosts. You also add download.docker.com to the hosts file.
 
--- Docker installation test
++ Docker installation test
 
 As a test, execute hypriot image. This hypriot is a very nice site, which preparing many kinds of Docker images.
 
