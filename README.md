@@ -257,7 +257,7 @@ After installation, make it updated.
 # apt -y update
 # apt -y dist-upgrade
 ```
-```
+
 All the installation model will be installed at /export/install
 
 ```
