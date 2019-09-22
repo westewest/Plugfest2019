@@ -765,6 +765,28 @@ Please test your installation as following the command.
 # ./classification_sample_async -i /opt/intel/openvino/deployment_tools/demo/car.png -m /home/<user>/squeezenet1.1_FP16/squeezenet1.1.xml -d MYRIAD
 ```
 
+- Installation for use AI to 1451
+
+Make a link for the convenient use.
+
+```
+	# cd /root
+	# ln -s inference_engine_samples/intel64/Release demo
+	# cd demo
+	# cp /export/install/Plugfest2019/P214e51-1-6/face_detection/*.sh .
+```
+
+This face detection demo predicts,
++ Recognize multiple faces
++ Predict the age of each person
++ Predict the gender of each person
++ Predict the emotion of each person
++ Predict the direction of the face of each person
+
+run-cpu.sh uses only CPU for the recognition process.
+
+run-myriad.sh use Intel Neural Compute Stick 2 for the recognition.
+
 ## Other topics
 
 ### Prevent Darkout
