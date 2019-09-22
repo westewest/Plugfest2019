@@ -563,7 +563,6 @@ If you want to install node, you can use pallet manager. If you want to add node
 	# pm2 restart node-red
 ```
 
-
 ### Authentication of Node-red (Option)
 
 It does not have authorization as it’s original configuration.
@@ -605,6 +604,166 @@ This model is applicable to use SGLab wind speed and direction sensor.
 NodeMCU was used to read data from the sensor. Use Arduino IDE to design NodeMCU. To install NodeMCU, you may install required libraries to design NodeMCU on Arduino IDE.
 
 To depict the graphical image of the measured data,  use the python script in GL directory.
+
+#### Face Detection AI application
+
+Why did we use Intel Compute Stick rather than Raspberry-Pi? Yes, this is the reason that we want to use AI application. Raspberry Pi is Ok to do for AI application. However, it is very slow and is not good for the demonstration. We also need an environment to construct new AI applications on the system. However, we do not want to take big computers into the abroad.
+
+Intel compute stick is Intel architecture and is easy to install Intel AI toolkit. This time, we use Open VINO Toolkit, which includes intel Deep Learning Deployment Toolkig.
+
+- Install the installer of OpenVINO
+
+Download the installer from the following URL. You use Ubuntu and have to select Linux. Click Register and Download button.
+
+https://software.intel.com/en-us/openvino-toolkit/choose-download
+
+Input all required items and click the Submit button.
+
+Select Customizable Package or Full Package; then you can download the installer. Both are Ok; however I recommend Full Packet to shorten the installation time and bothersome.
+
+- Execute installer
+
+Move the downloaded installer to the install directory.
+
+```
+	# cd /export/install
+	# mv ~/Downloads/l_openvino_toolkit_p_2018.<version>.tgz .
+	# tar -xf l_openvino_toolkit_p_2018.<version>.tgz
+# cd l_openvino_toolkit_p_2018.<version>
+# ./install_GUI.sh
+```
+
+- GUI Installer
+
+It opens the GUI installer, and push install button to start the installation. It may show some errors; however, you can ignore them. OpenVINO SDK files will be installed /opt directory. Therefore, it needs root account to install.
+
+- Solve the dependencies
+The following command solves the dependencies for the installation.
+
+```
+# cd /opt/intel/computer_vision_sdk/install_dependencies
+# ./install_cv_sdk_dependencies.sh
+```
+
+- Add environmental values
+
+After finishing the installation, add environmental values by using the following command.
+
+```
+source /opt/intel/computer_vision_sdk/bin/setupvars.sh
+```
+
+Anytime you have to type this command to use OpenVINO. For your convenience, it will better to add it into .bashrc file. Open ~/.bashrc file and add the command into the last of the file.
+
+- Configure model optimizer
+
+By following the commands below, configure the model optimizer.
+
+```
+# cd /opt/intel/computer_vision_sdk/deployment_tools/model_optimizer/install_prerequisites
+# ./install_prerequisites.sh
+```
+
+- Execution of demo program
+
+The installation was finished. Next, you have to compile executable files and download the required components. These processes are accomplished by executing the shell command of demonstration program.
+
+```
+# cd /opt/intel/computer_vision_sdk/deployment_tools/demo
+# ./demo_squeezenet_download_convert_run.sh
+```
+
+This shell script prepares the needed environment to execute demo programs. You may look the source code because the code executes all needed process to execute OpenVINO. It is helpful. Ok. Let’s look into the script. 
+
+See https://docs.openvinotoolkit.org/latest/_docs_install_guides_installing_openvino_linux.html
+
++ Step 1. Download the Caffe model and the prototxt of the model
+
+Firstly, it installs components for the model optimizer.
+
+```
+sudo -E apt -y install build-essential python3-pip virtualenv cmake libpng12-dev libcairo2-dev libpango1.0-dev libglib2.0-dev libgtk2.0-dev libswscale-dev libavcodec-dev libavformat-dev libgstreamer1.0-0 gstreamer1.0-plugins-base
+sudo -E pip install pyyaml requests
+```
+
+Next, download the learned model of squeezenet1.1 by using downloader. The model was installed to /home/<user>/openvino_modles/FP32/classification/squeezenet/1.1/cafe/. In this installation, it is installed to /root/openvino_models
+
+```
+python3 /opt/intel//computer_vision_sdk_2018.4.420/deployment_tools/model_downloader/downloader.py --name squeezenet1.1 --output_dir ${HOME}/openvino_models/FP32/
+```
+
++ Step 2. Configure Model Optimizer
+
+Configure the model optimizer. It will set up environmental values and configuration of the model optimizer. However, these processes are done in the installation process. It seems it redo the process to cope with the case when the user missed the configuration.
+
++ Step 3. Convert a model with Model Optimizer
+
+Convert download model to IR (Intermediate expression). Specify the model name and IR file name as input.
+The directory of IR instrattion was set to /home/<user>/openvino_models/ir/squeeznet1.1/FP32/
+
+Then converting the learned mode, it is required to specify the bit length of floating-point. FP16 and FP32 mean 16-bit floating-point model and 32-bit floating-point model, respectively. It influences the precision of prediction. Intel Movidius (Intel Neural Compute Stick) does not support FP32, and it cannot use FP32 model.
+
+```
+python3 /opt/intel//computer_vision_sdk_2018.3.343/deployment_tools/model_optimizer/mo.py 
+        --input_model ${HOME}/openvino_models/classification/squeezenet/1.1/caffe/squeezenet1.1.caffemodel
+        --output_dir ${HOME}/openvino_models/ir/squeezenet1.1
+        --data_type FP32
+```
+
+When converting process is finished, two files of model_name+”.bin” and model_name+”.xml” are created.
+
++ Step 4. Build samples
+
+It will build all sample programs, including demonstration programs. Executable files are created into the following directory.
+
+/home/<user>/inference_engine_samples/intel64/Release
+
++Step 5. Run samples
+
+The following sample programs are executed.
+
+/home/<user>/inference_engine_samples/intel64/Release/classification_sample
+
+The option of the command is as follows.
+
+```
+# ./classification_sample \
+-d CPU \
+-i /opt/intel//computer_vision_sdk_2018.4.420/demo/car.png \
+-m ${HOME}/openvino_models/ir/squeezenet1.1/FP32/squeezenet1.1.xml
+```
+
+Option -d ： Specify hardware to execute the prediction. To use Neural Compute Stick, specify MYRIAD after the installation step below.
+Option -I ： Image file for input
+Option -m ： IR xml file for executing
+
+In the meantime, squeezenet1.1.labels was copied. SqueezeNet has learned 1,000 types images of ImageNET. The result of prediction will be given by the image ID. The program transfers the image ID to the name of the object. The labels are given by a table to transform.
+
+You may use your own images for the prediction process.
+
++ Steps for Intel Movidius Neural Compute Stick and Intel Neural Compute Stick 2
+
+We use the Intel Neural Compute Stick 2 powered by the Intel Movidius Myriad X VPU.
+
+Add the current Linux user to the user's group:
+
+```
+# usermod -a -G users "$(whoami)"
+```
+
+Log out and log in for it to take effect. To perform inference on Neural Compute Stick 2, install the USB rules as follows:
+
+```
+# cp /opt/intel/openvino/inference_engine/external/97-myriad-usbboot.rules /etc/udev/rules.d/
+# udevadm control --reload-rules
+# udevadm trigger
+# ldconfig
+```
+
+Please test your installation as following the command.
+```
+# ./classification_sample_async -i /opt/intel/openvino/deployment_tools/demo/car.png -m /home/<user>/squeezenet1.1_FP16/squeezenet1.1.xml -d MYRIAD
+```
 
 ## Other topics
 
