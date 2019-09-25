@@ -35,6 +35,8 @@ https://gitpitch.com/westlab/PlugFest/
 - For the minimum environment, one conventional PCs is enough if it has enough performance. As a recommendation, four conventional PC should be prepared; one for TIM/NCAP emulation to connect IoT sensors (hostname:iot), one for Face Detection using Deep Learning (hostname:ai), one for MQTT v5 broker (hostname:srv), and one for service client as a node-red host are required.  All these services can be executed on one server.
 - MQTT v5 broker is required to use new features of MQTT v5. For IEEE P21451-1-6, MQTT v5 will be mandatory to implement all needed functions for IEEE1451.
 - (IMPORTANT) There are two versions of GitHub design: westlab/Plugfest2019 and  westewest/Plugfest2019. At this moment westewest is the correct model. Please replace all the source URL of git command line.
+- The original Plugfest design model runs TIM and NCAP on Raspberry-Pi 3 or BLE/Bluetooth compatible Raspberry-Pi with NOOBS+Raspbian installation were recommended. From the perspective of system reliability, current design model runs on general intel architecture PC. Intel Compute Stick was used in this design. However, the installation procedures and application design are based on universal model. It also avairable for ARM architecture embedded machines.
+- The original Plugfest design required MQTTnet-based MQTT server, and Microsoft Visual Studio was required to compile it. Current design uses general MQTT V5. Mosquitto MQTT broker is recomended for constructing required design model.
 
 ## Installation
 
