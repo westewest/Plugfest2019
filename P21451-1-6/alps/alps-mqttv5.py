@@ -152,8 +152,10 @@ async def main():
                 faststime = 999
             fstimel = faststime % 128
             fstimeh = int(faststime/128)
-            fsstrh = int(format(fstimeh, '08x')[-2:-0], 16)
-            fsstrl = int(format(fstimel, '08x')[-2:-0], 16)
+            fstimelstr = format(fstimel, '08x')
+            fstimehstr = format(fstimeh, '08x')
+            fsstrl = int(fstimelstr[-2:], 16)
+            fsstrh = int(fstimehstr[-2:], 16)
             a.writeCharacteristic(0x0018, struct.pack('<bbbb', 0x06, 0x04, fsstrl, fsstrh), True) 
         else:
             a.writeCharacteristic(0x0018, struct.pack('<bbbb', 0x06, 0x04, 0x7A, 0x01), True) 

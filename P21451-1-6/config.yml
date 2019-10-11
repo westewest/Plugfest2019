@@ -3,8 +3,14 @@ mqttport: 1883
 topic: /PRISM/
 sensortopic: SENSOR/
 persontopic: PERSON/
-alpsmodule1: 48:F0:7B:78:47:25
-alpsmodule2: 48:F0:7B:78:47:33
-alpsmodule3: 48:F0:7B:78:47:35
-alpsmodule2: 48:F0:7B:78:47:36
-alpsmodule3: 48:F0:7B:78:47:4E
+slowsample: 1
+fastsample: 500
+#username: iesstd        not for MQTTv5
+#password: 1451Plugfest        not for MQTTv5
+#alpsmodule1: 48:F0:7B:78:47:25
+#alpsmodule2: 48:F0:7B:78:47:33
+#alpsmodule3: 48:F0:7B:78:47:35
+#alpsmodule4: 48:F0:7B:78:47:36
+#alpsmodule5: 48:F0:7B:78:47:4E
+alpsmodule1: 48:F0:7B:78:47:46
+alpsmodule2: 48:F0:7B:78:47:4C
