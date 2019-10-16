@@ -5,6 +5,8 @@ sensortopic: SENSOR/
 persontopic: PERSON/
 slowsample: 1
 fastsample: 500
+reqtopic: NCAP/1451OPE
+restopic: SERVICE/1451RES
 #username: iesstd        not for MQTTv5
 #password: 1451Plugfest        not for MQTTv5
 alpsmodule1: 48:F0:7B:78:47:46

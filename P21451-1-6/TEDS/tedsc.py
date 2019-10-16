@@ -7,6 +7,57 @@ import uvloop
 import asyncio
 import gmqtt
 
+import argparse
+import yaml
+
+parser = argparse.ArgumentParser(
+    prog = 'tedss.py',
+    usage = 'TEDS distributing server using MQTTv5 broker',
+    description = 'TEDS distributing server using MQTTv5 broker',
+    epilog = 'Programmer: Hiroaki Nishi west@west.yokohama',
+    add_help = True)
+parser.add_argument('--version', version='%(prog)s 0.1',
+    action = 'version',
+    help = 'verbose operation (output sensor data)')
+parser.add_argument('-v', '--verbose',
+    action = 'store_true',
+    help = 'verbose operation (output sensor data)',
+    default = False)
+parser.add_argument('-q', '--quiet',
+    action = 'store_true',
+    help = 'quiet (does not output data messages)',
+    default = False)
+parser.add_argument('-c', '--config',
+    action = 'store',
+    help = 'specify YAML config file',
+    default = '../config.yml',
+    type = str)
+parser.add_argument('-t', '--type',
+    action = 'store',
+    help = 'specify TEDS file',
+    default = 'METATEDS/TEMP',
+    type = str)
+
+args = parser.parse_args()
+
+vflag = False
+if args.verbose:
+    vflag = True
+qflag = False
+if args.quiet:
+    qflag = True
+sqflag = False
+
+f = open(args.config, "r+")
+confdata = yaml.load(f)
+
+host = confdata['mqtthost']
+#'192.168.0.10'
+port = int(confdata['mqttport'])
+#1883
+reqtopic = confdata['topic']+confdata['reqtopic']
+restopic = confdata['topic']+confdata['restopic']
+
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 STOP = asyncio.Event()
@@ -53,7 +104,7 @@ async def main(broker_host, broker_port, token):
     await sub_client.connect(broker_host, broker_port)
 
     # two overlapping subscriptions with different subscription identifiers
-    sub_client.subscribe('/PRISM/SERVICE/1451RES', qos=1, subscription_identifier=1)
+    sub_client.subscribe(restopic, qos=1, subscription_identifier=1)
 
     pub_client = gmqtt.Client("service-req")
 
@@ -61,8 +112,8 @@ async def main(broker_host, broker_port, token):
     pub_client.set_auth_credentials(token, None)
     await pub_client.connect(broker_host, broker_port)
 
-    pub_client.publish('/PRISM/NCAP/1451OPE', 'METATEDS/TEMP', qos=1, content_type='utf-8',
-                       message_expiry_interval=60, response_topic='/PRISM/SERVICE/1451RES', user_property=('time', str(time.time())))
+    pub_client.publish(reqtopic, 'METATEDS/TEMP', qos=1, content_type='utf-8',
+                       message_expiry_interval=60, response_topic=restopic, user_property=('time', str(time.time())))
 
     await STOP.wait()
     await pub_client.disconnect()
@@ -74,8 +125,6 @@ if __name__ == '__main__':
 #    logging.basicConfig(level=logging.INFO)
     logging.basicConfig(level=logging.ERROR)
 
-    host = os.environ.get('HOST', '192.168.0.10')
-    port = 1883
     token = os.environ.get('TOKEN', 'fake token')
 
     loop.add_signal_handler(signal.SIGINT, ask_exit)

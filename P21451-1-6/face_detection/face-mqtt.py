@@ -66,10 +66,10 @@ def main():
     print('MQTT setup')
     client = mqtt.Client(protocol=mqtt.MQTTv311)
     client.connect(host, port=port, keepalive=60)
+    di = input()
     while True:
         n = 0
         person = []
-        di = input()
         if vflag:
             print('1:'+di)
         res = rstrpc.match(di)
@@ -102,24 +102,27 @@ def main():
                 person[i] += res.groups()
                 if i < n:
                     di = input()
+        for i in range(n, 5):
             if vflag:
-                print(person)
+                print(i)
+            person.append((str(i), '0', '', '', '', '', '', ''))
 
-            for i in range(len(person)):
+        for i in range(len(person)):
 #('0', '1', '1', '(436,204)-(730,730)', 'M', '34', 'surprise', '-8.31491;4.88977;-8.24657') 
-                if len(person[i]) != 8:
-                    continue
-                print(i,person[i])
-                psersonid = str(int(person[i][0])+1)
-                client.publish(topic+psersonid+'/PROB', person[i][2])
-                client.publish(topic+psersonid+'/AREA', person[i][3])
-                client.publish(topic+psersonid+'/GENDER', person[i][4])
-                client.publish(topic+psersonid+'/AGE', person[i][5])
-                client.publish(topic+psersonid+'/EMOTION', person[i][6])
-                fx, fy, fz = person[0][7].split(';')
-                client.publish(topic+psersonid+'/FACEX', fx)
-                client.publish(topic+psersonid+'/FACEY', fy)
-                client.publish(topic+psersonid+'/FACEZ', fz)
+            if len(person[i]) != 8:
+                continue
+            print('PUB:', end='')
+            print(i,person[i])
+            psersonid = str(int(person[i][0])+1)
+            client.publish(topic+psersonid+'/PROB', person[i][2])
+            client.publish(topic+psersonid+'/AREA', person[i][3])
+            client.publish(topic+psersonid+'/GENDER', person[i][4])
+            client.publish(topic+psersonid+'/AGE', person[i][5])
+            client.publish(topic+psersonid+'/EMOTION', person[i][6])
+            fx, fy, fz = person[0][7].split(';')
+            client.publish(topic+psersonid+'/FACEX', fx)
+            client.publish(topic+psersonid+'/FACEY', fy)
+            client.publish(topic+psersonid+'/FACEZ', fz)
     client.disconnect()
 
 if __name__ == '__main__':
