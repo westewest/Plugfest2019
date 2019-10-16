@@ -22,6 +22,7 @@ if($ip == 0){
 		}
 	}
 }
+$ip = 50;
 die("No IP") if($ip == 0);
 my $tedsfilename = "ALPS-$ip-TEDS.txt";
 system ("/bin/rm -f DATA-*.txt");

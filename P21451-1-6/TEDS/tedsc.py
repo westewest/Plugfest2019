@@ -21,6 +21,7 @@ def on_message(client, topic, payload, qos, properties):
                  .format(client._client_id, topic, payload, qos, properties))
     payload = payload.decode('utf-8')
     print("PAYLOAD:"+payload)
+    print("PROP-RP:"+properties['response_topic'][0])
 
 def on_disconnect(client, packet, exc=None):
     logging.info('[DISCONNECTED {}]'.format(client._client_id))
