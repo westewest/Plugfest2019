@@ -32,11 +32,6 @@ parser.add_argument('-c', '--config',
     help = 'specify YAML config file',
     default = '../config.yml',
     type = str)
-parser.add_argument('-t', '--type',
-    action = 'store',
-    help = 'specify TEDS file',
-    default = 'METATEDS/TEMP',
-    type = str)
 
 args = parser.parse_args()
 

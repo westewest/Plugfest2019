@@ -32,9 +32,9 @@ parser.add_argument('-c', '--config',
     help = 'specify YAML config file',
     default = '../config.yml',
     type = str)
-parser.add_argument('-t', '--type',
+parser.add_argument('-n', '--name',
     action = 'store',
-    help = 'specify TEDS file',
+    help = 'specify TEDS filename',
     default = 'METATEDS/TEMP',
     type = str)
 
@@ -72,7 +72,6 @@ def on_message(client, topic, payload, qos, properties):
                  .format(client._client_id, topic, payload, qos, properties))
     payload = payload.decode('utf-8')
     print("PAYLOAD:"+payload)
-    print("PROP-RP:"+properties['response_topic'][0])
 
 def on_disconnect(client, packet, exc=None):
     logging.info('[DISCONNECTED {}]'.format(client._client_id))
@@ -112,8 +111,9 @@ async def main(broker_host, broker_port, token):
     pub_client.set_auth_credentials(token, None)
     await pub_client.connect(broker_host, broker_port)
 
-    pub_client.publish(reqtopic, 'METATEDS/TEMP', qos=1, content_type='utf-8',
-                       message_expiry_interval=60, response_topic=restopic, user_property=('time', str(time.time())))
+    pub_client.publish(reqtopic, args.name, qos=1, content_type='utf-8',
+        message_expiry_interval=60, response_topic=restopic,
+        user_property=('time', str(time.time())))
 
     await STOP.wait()
     await pub_client.disconnect()
